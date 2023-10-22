@@ -72,7 +72,7 @@ int main(){
                      int daily_lecture = list[j].lectures / 7;
                      if(daily_lecture==0){daily_lecture=1;}
                         for(int k=0; k<daily_lecture;k++){
-                       cout << "pushing back " << list[j].name << "\n"<<endl;
+                       //cout << "pushing back " << list[j].name << "\n"<<endl;
                            int indexToPush = findLowestIndex(day,7);
                             day[indexToPush].push_back(list[j].name);
                             list[j].lectures--;

@@ -1,0 +1,7 @@
+
+
+services:
+  - type: web
+    name: mysite
+    runtime: python
+    startCommand: "gunicorn mysite.wsgi:application"

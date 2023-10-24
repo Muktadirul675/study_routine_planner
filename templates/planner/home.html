@@ -83,11 +83,14 @@
               console.log(response);
               function convertToPDF(data){
                 let pdf = "";
+                let num=1;
                 for(row of data){
+                  pdf += num;
                   for(col of row){
                     pdf = pdf + col +" | "
                   }
                   pdf = pdf + "\n"
+                  num++;
                 }
                 return pdf;
               }

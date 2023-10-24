@@ -51,11 +51,12 @@
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script src="{% static 'src/tableHTMLExport.js' %}"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js"></script>
+  <script src="{% static 'src/jspdf.umd.min.js' %}"></script>
+  <script src="{% static 'src/jspdf.plugin.autotable.js' %}"></script>
   <script type="text/javascript">
     $(document).ready(function () {
       const { jsPDF } = window.jspdf;
+      // const {autoTable} = window.jspdf_autoTable;
       let subjects = JSON.parse(`{{json|escapejs}}`);
       console.log(subjects)
       function makeRoutine() {
@@ -85,7 +86,12 @@
                 let pdf = "";
                 let num=1;
                 for(row of data){
-                  pdf += num;
+                  for(var i=0;i<10;i++){
+                    pdf += "-";
+                  }
+                  pdf += "\n";
+                  pdf += num + ". ";
+                  
                   for(col of row){
                     pdf = pdf + col +" | "
                   }
@@ -114,8 +120,9 @@
                 //   orientation: 'p'
                 // });
                 let doc = new jsPDF();
-                let text = convertToPDF(response);
-                doc.text(text, 10, 10)
+                // let text = convertToPDF(response);
+                // doc.text(text, 10, 10)
+                doc.autoTable({html:"#routine"})
                 doc.save('routine.pdf')
               }
               $("#pdfBtn").click(createPDF)

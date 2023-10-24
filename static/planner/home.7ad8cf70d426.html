@@ -1,0 +1,168 @@
+{% extends "../base.html" %}
+{% load static %}
+{% block body %}
+<style>
+  .sub-btn {
+    cursor: pointer;
+    transition: 0.1s;
+  }
+
+  .sub-btn:hover {
+    background-color: whitesmoke;
+  }
+
+  .hiddenBtn {
+    display: none;
+  }
+</style>
+<div style="background-color: #6897BB;color: white;">
+  <div class="container p-3">
+    <h1>Routine Planner</h1>
+
+    <form class="p-3  rounded">
+      {% csrf_token %}
+      {% for sub in subjects %}
+      <div class="row my-1">
+        <div class="col-5">
+          <b>{{sub.name}}</b>
+        </div>
+        <div class="col-5"><input class="form-control lectureNum" type="number" name="{{sub.code}}"
+            subject-name="{{sub.name}}" id=""></div>
+
+      </div>
+      {% endfor %}
+      <hr>
+      <b>Target(in days):</b><input type="number" name="target" class="form-control" id="target" value="0">
+    </form>
+    <div class="row p-3 m-2 border rounded"
+      style="background-color: #f0f8ff;border-color:#c6e2ff;display: flex;width: 100%;">
+      <button class="btn btn-success" id="makeRoutineBtn">Make Routine</button> <br> <br> <span class="my-1"></span>
+      <button class="btn btn-danger" id="clearBtn">Clear</button>
+    </div>
+    <div class="row p-3 m-2 border rounded" id="madeRoutine"
+      style="background-color: #f0f8ff;border-color:#c6e2ff;display: flex;width: 100%; color:black;overflow-x: scroll;">
+      <div class="forTable">
+        Click "Make Routine" to get the routine
+      </div>
+      <button class="btn btn-primary my-1 hiddenBtn" id="pdfBtn">
+        <i class="fa-solid fa-download"></i> PDF
+      </button>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="{% static 'src/tableHTMLExport.js' %}"></script>
+  <script src="{% static 'src/jspdf.umd.min.js' %}"></script>
+  <script src="{% static 'src/jspdf.plugin.autotable.js' %}"></script>
+  <script type="text/javascript">
+    $(document).ready(function () {
+      const { jsPDF } = window.jspdf;
+      // const {autoTable} = window.jspdf_autoTable;
+      let subjects = JSON.parse(`{{json|escapejs}}`);
+      console.log(subjects)
+      function makeRoutine() {
+        if ($("#target").val() != 0) {
+          $("#makeRoutineBtn").addClass("disabled");
+          let givenSubjects = {};
+          $(".lectureNum").each(function (key) {
+            let el = $(this);
+            if (el.val() != 0) {
+              let obj = { name: el.attr("subject-name"), code: el.attr("name"), lectures: el.val() }
+              givenSubjects[key] = obj;
+            }
+          })
+          console.log(givenSubjects);
+          $.ajax({
+            url: "/planner/api/",
+            method: "POST",
+            csrfmiddlewaretoken: "{{csrf_token}}",
+            data: {
+              "csrfmiddlewaretoken": "{{csrf_token}}",
+              "input": JSON.stringify(givenSubjects),
+              "days": $("#target").val(),
+            },
+            success: function (response) {
+              console.log(response);
+              function convertToPDF(data){
+                let pdf = "";
+                let num=1;
+                for(row of data){
+                  for(var i=0;i<10;i++){
+                    pdf += "-";
+                  }
+                  pdf += "\n";
+                  pdf += num + ". ";
+                  
+                  for(col of row){
+                    pdf = pdf + col +" | "
+                  }
+                  pdf = pdf + "\n"
+                  num++;
+                }
+                return pdf;
+              }
+              function convertToTable(data) {
+                let table = "<table class='table table-responsive table-striped table-scroll' id='routine'>"
+                for (row of data) {
+                  let tr = "<tr>"
+                  for (col of row) {
+                    let column = "<td>" + col + "</td>"
+                    tr = tr + column;
+                  }
+                  tr = tr + "</tr>"
+                  table = table + tr;
+                }
+                table = table + "</table>"
+                return table;
+              }
+              function createPDF() {
+                // $("#routine").tableHTMLExport({
+                //   type: 'pdf',
+                //   orientation: 'p'
+                // });
+                let doc = new jsPDF();
+                // let text = convertToPDF(response);
+                // doc.text(text, 10, 10)
+                doc.autoTable({html:"#routine"})
+                doc.save('routine.pdf')
+              }
+              $("#pdfBtn").click(createPDF)
+              $("#madeRoutine .forTable").html(convertToTable(response));
+            }
+          }).done(function () {
+            $("#pdfBtn").removeClass("hiddenBtn");
+          })
+
+          // $('#body').scrollTo("#routine")
+          $("#makeRoutineBtn").removeClass("disabled");
+        } else {
+          alert("Please give your targeted days")
+        }
+      }
+      $("#makeRoutineBtn").click(makeRoutine);
+      function clear() {
+        console.log("clear")
+        $(".lectureNum").each(function () {
+          $(this).val("");
+        });
+      }
+      $("#clearBtn").click(clear);
+      function getSubjectName(code) {
+        for (s of subjects) {
+          if (s.code == code) {
+            return s.name;
+          }
+        }
+      }
+      $(".initBtn").each(function () {
+        $(this).click(function (e) {
+          e.preventDefault();
+          let code = $(this).attr("subject_code");
+          let name = getSubjectName(code);
+          console.log(code);
+          console.log(name);
+        })
+      })
+    });
+  </script>
+</div>
+{%endblock %}
